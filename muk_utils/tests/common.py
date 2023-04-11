@@ -47,10 +47,7 @@ def multi_users(users=[['base.user_root', True], ['base.user_admin', True]], res
             for user in user_list:
                 self.cr.execute('SAVEPOINT test_multi_users')
                 try:
-                    if not isinstance(user[0], int):
-                        self.uid = self.ref(user[0])
-                    else:
-                        self.uid = user[0]
+                    self.uid = user[0] if isinstance(user[0], int) else self.ref(user[0])
                     func(self, *args, **kwargs)
                 except Exception as error:
                     test_results.append({
@@ -82,13 +79,15 @@ def multi_users(users=[['base.user_root', True], ['base.user_admin', True]], res
                         _logger.error(result['error'], exc_info=True)
                     test_fails.append(result)
             if test_fails:
-                message = "%s out of %s tests failed" % (len(test_fails), len(test_results))
+                message = f"{len(test_fails)} out of {len(test_results)} tests failed"
                 if raise_exception:
                     raise test_fails[0]['error']
                 else:
                     _logger.info(message)
             return test_results
+
         return wrapper
+
     return decorator
 
 def track_function(max_query_count=None, max_query_time=None, max_time=None, return_tracking=False):
@@ -100,9 +99,9 @@ def track_function(max_query_count=None, max_query_time=None, max_time=None, ret
             threading.current_thread().query_count = 0
             threading.current_thread().perf_t0 = time.time()
             result = func(*args, **kwargs)
-            message = "%s" % func.__name__
+            message = f"{func.__name__}"
             if args and hasattr(args[0], "uid"):
-                message = " (%s)" % args[0].uid
+                message = f" ({args[0].uid})"
             if hasattr(threading.current_thread(), "query_count"):
                 query_count = threading.current_thread().query_count
                 query_time = threading.current_thread().query_time
@@ -116,17 +115,17 @@ def track_function(max_query_count=None, max_query_time=None, max_time=None, ret
                     query_count, query_time, remaining_time, time_taken
                 ]
                 if max_query_count and query_count > max_query_count:
-                    raise AssertionError("More than %s queries" % max_query_count)
+                    raise AssertionError(f"More than {max_query_count} queries")
                 if max_query_time and query_time > max_query_time:
                     raise AssertionError("Queries took longer than %.3fs" % max_query_time)
                 if max_time and time_taken > max_time:
                     raise AssertionError("Function took longer than %.3fs" % max_time)
             if not return_tracking:
                 _logger.info(message)
-            if return_tracking:
-                return result, tracking_parameters
-            return result
+            return (result, tracking_parameters) if return_tracking else result
+
         return wrapper
+
     return decorator
 
 #----------------------------------------------------------
@@ -137,16 +136,16 @@ class HttpCase(common.HttpCase):
     
     def csrf_token(self, time_limit=3600):
         token = self.session.sid
-        max_ts = '' if not time_limit else int(time.time() + time_limit)
-        msg = '%s%s' % (token, max_ts)
+        max_ts = int(time.time() + time_limit) if time_limit else ''
+        msg = f'{token}{max_ts}'
         secret = self.env['ir.config_parameter'].sudo().get_param('database.secret')
         assert secret, "CSRF protection requires a configured database secret"
         hm = hmac.new(secret.encode('ascii'), msg.encode('utf-8'), hashlib.sha1).hexdigest()
-        return '%so%s' % (hm, max_ts)
+        return f'{hm}o{max_ts}'
     
     def url_open(self, url, data=None, timeout=10, csrf=False):
         if url.startswith('/'):
-            url = "http://%s:%s%s" % (HOST, PORT, url)
+            url = f"http://{HOST}:{PORT}{url}"
         if data:
             if csrf:
                 data.update({'csrf_token': self.csrf_token()})

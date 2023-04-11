@@ -98,7 +98,7 @@ class Hierarchy(models.AbstractModel):
         for value in operand.split('/'):
             args = [(self._rec_name_fallback(), operator, value)]
             domain = expression.OR([args, domain]) if domain else args
-        return domain if domain else [(self._rec_name_fallback(), operator, "")]
+        return domain or [(self._rec_name_fallback(), operator, "")]
 
     #----------------------------------------------------------
     # Read, View 
@@ -134,7 +134,7 @@ class Hierarchy(models.AbstractModel):
     @api.model
     def _name_search(self, name='', args=None, operator='ilike', limit=100, name_get_uid=None):
         domain = list(args or [])
-        if not (name == '' and operator == 'ilike') :
+        if name != '' or operator != 'ilike':
             if '/' in name:
                 domain += [('parent_path_names', operator, name)]  
             else:
@@ -144,18 +144,18 @@ class Hierarchy(models.AbstractModel):
     
     @api.multi
     def name_get(self):
-        if self.env.context.get(self._name_path_context):
-            res = []
-            for record in self:
-                names = record.parent_path_names
-                if not names:
-                    res.append(super(Hierarchy, record).name_get()[0])
-                elif not len(names) > 50:
-                    res.append((record.id, names))
-                else:
-                    res.append((record.id, ".." + names[-48:]))
-            return res
-        return super(Hierarchy, self).name_get()
+        if not self.env.context.get(self._name_path_context):
+            return super(Hierarchy, self).name_get()
+        res = []
+        for record in self:
+            names = record.parent_path_names
+            if not names:
+                res.append(super(Hierarchy, record).name_get()[0])
+            elif len(names) <= 50:
+                res.append((record.id, names))
+            else:
+                res.append((record.id, f"..{names[-48:]}"))
+        return res
     
     #----------------------------------------------------------
     # Create, Update, Delete
@@ -163,14 +163,14 @@ class Hierarchy(models.AbstractModel):
     
     @api.multi
     def write(self, vals):
-        if self._parent_path_store and self._rec_name_fallback() in vals:
-            with self.env.norecompute():
-                res = super(Hierarchy, self).write(vals)
-                domain = [('id', 'child_of', self.ids)]
-                records = self.sudo().search(domain)
-                records.modified(['parent_path'])
-            if self.env.recompute and self.env.context.get('recompute', True):
-                records.recompute()
-            return res  
-        return super(Hierarchy, self).write(vals)        
+        if not self._parent_path_store or self._rec_name_fallback() not in vals:
+            return super(Hierarchy, self).write(vals)
+        with self.env.norecompute():
+            res = super(Hierarchy, self).write(vals)
+            domain = [('id', 'child_of', self.ids)]
+            records = self.sudo().search(domain)
+            records.modified(['parent_path'])
+        if self.env.recompute and self.env.context.get('recompute', True):
+            records.recompute()
+        return res        
             

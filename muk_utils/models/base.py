@@ -40,7 +40,7 @@ class Base(models.AbstractModel):
     @api.model
     def _check_parent_field(self):
         if self._parent_name not in self._fields:
-            raise TypeError("The parent (%s) field does not exist." % self._parent_name)
+            raise TypeError(f"The parent ({self._parent_name}) field does not exist.")
     
     @api.model
     def _build_search_childs_domain(self, parent_id, domain=[]):
@@ -51,8 +51,8 @@ class Base(models.AbstractModel):
     @api.model
     def _check_context_bin_size(self, field):
         return any(
-            key in self.env.context and self.env.context[key] 
-            for key in ['bin_size', 'bin_size_%s' % (field)]
+            key in self.env.context and self.env.context[key]
+            for key in ['bin_size', f'bin_size_{field}']
         )
     
     #----------------------------------------------------------
@@ -124,8 +124,8 @@ class Base(models.AbstractModel):
         query = self._where_calc(domain)
         self._apply_ir_rules(query, 'read')
         from_clause, where_clause, where_clause_arguments = query.get_sql()
-        parent_where = where_clause and (" WHERE %s" % where_clause) or ''
-        parent_query = 'SELECT "%s".id FROM ' % self._table + from_clause + parent_where
+        parent_where = where_clause and f" WHERE {where_clause}" or ''
+        parent_query = f'SELECT "{self._table}".id FROM {from_clause}{parent_where}'
         no_parent_clause ='"{table}"."{field}" IS NULL'.format(
             table=self._table, 
             field=self._parent_name
@@ -142,17 +142,17 @@ class Base(models.AbstractModel):
         order_by = self._generate_order_by(order, query)
         from_clause, where_clause, where_clause_params = query.get_sql()
         where_str = (
-            where_clause and 
-            (" WHERE %s AND %s" % (where_clause, parent_clause)) or 
-            (" WHERE %s" % parent_clause)
+            where_clause
+            and f" WHERE {where_clause} AND {parent_clause}"
+            or f" WHERE {parent_clause}"
         )
         if count:
-            query_str = 'SELECT count(1) FROM ' + from_clause + where_str
+            query_str = f'SELECT count(1) FROM {from_clause}{where_str}'
             self._cr.execute(query_str, where_clause_params)
             return self._cr.fetchone()[0]
         limit_str = limit and ' limit %d' % limit or ''
         offset_str = offset and ' offset %d' % offset or ''
-        query_str = 'SELECT "%s".id FROM ' % self._table + from_clause + where_str + order_by + limit_str + offset_str
+        query_str = f'SELECT "{self._table}".id FROM {from_clause}{where_str}{order_by}{limit_str}{offset_str}'
         complete_where_clause_params = where_clause_params + where_clause_arguments
         self._cr.execute(query_str, complete_where_clause_params)
         return utils.uniquify_list([x[0] for x in self._cr.fetchall()])

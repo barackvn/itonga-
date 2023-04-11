@@ -73,7 +73,7 @@ class ResConfigSettings(models.TransientModel):
         document = etree.XML(ret_val['arch'])
         for field in ret_val['fields']:
             if field.startswith("module_") and field[len("module_"):] not in modules:
-                for node in document.xpath("//field[@name='%s']" % field):
+                for node in document.xpath(f"//field[@name='{field}']"):
                     if node.get("widget") != 'upgrade_boolean':
                         node.set("widget", "module_boolean")
         ret_val['arch'] = etree.tostring(document, encoding='unicode')

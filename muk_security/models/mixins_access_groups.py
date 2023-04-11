@@ -60,28 +60,37 @@ class AccessGroupsModel(models.AbstractModel):
         def add(name, field):
             if name not in self._fields:
                 self._add_field(name, field)
-        add('groups', fields.Many2many(
-            _module=self._module,
-            comodel_name='muk_security.access_groups',
-            relation='%s_groups_rel' % (self._table),
-            column1='aid',
-            column2='gid',
-            string="Groups",
-            automatic=True,
-            groups=self._access_groups_fields))
-        add('complete_groups', fields.Many2many(
-            _module=self._module,
-            comodel_name='muk_security.access_groups',
-            relation='%s_complete_groups_rel' % (self._table),
-            column1='aid',
-            column2='gid',
-            string="Complete Groups", 
-            compute='_compute_groups',
-            readonly=True,
-            store=True,
-            automatic=True,
-            compute_sudo=self._access_groups_sudo,
-            groups=self._access_groups_fields))
+
+        add(
+            'groups',
+            fields.Many2many(
+                _module=self._module,
+                comodel_name='muk_security.access_groups',
+                relation=f'{self._table}_groups_rel',
+                column1='aid',
+                column2='gid',
+                string="Groups",
+                automatic=True,
+                groups=self._access_groups_fields,
+            ),
+        )
+        add(
+            'complete_groups',
+            fields.Many2many(
+                _module=self._module,
+                comodel_name='muk_security.access_groups',
+                relation=f'{self._table}_complete_groups_rel',
+                column1='aid',
+                column2='gid',
+                string="Complete Groups",
+                compute='_compute_groups',
+                readonly=True,
+                store=True,
+                automatic=True,
+                compute_sudo=self._access_groups_sudo,
+                groups=self._access_groups_fields,
+            ),
+        )
     
     #----------------------------------------------------------
     # Helper
@@ -141,7 +150,7 @@ class AccessGroupsModel(models.AbstractModel):
             ); 
         '''
         subset = self.ids and 'AND r.aid = ANY (VALUES {ids})'.format(
-            ids=', '.join(map(lambda id: '(%s)' % id, self.ids))
+            ids=', '.join(map(lambda id: f'({id})', self.ids))
         )
         groups_mode = self._access_groups_mode and 'AND g.perm_{operation} = true'.format(
             operation=operation
@@ -150,7 +159,7 @@ class AccessGroupsModel(models.AbstractModel):
             table=self._table,
             subset=subset or "",
             groups_mode=groups_mode or "",
-        )  
+        )
         self.env.cr.execute(sql_query)
         return list(map(lambda val: val[0], self.env.cr.fetchall()))
           
@@ -162,7 +171,7 @@ class AccessGroupsModel(models.AbstractModel):
     def check_access(self, operation, raise_exception=False):
         res = super(AccessGroupsModel, self).check_access(operation, raise_exception)
         try:
-            return res and self.check_access_groups(operation) == None
+            return res and self.check_access_groups(operation) is None
         except AccessError:
             if raise_exception:
                 raise
@@ -176,8 +185,9 @@ class AccessGroupsModel(models.AbstractModel):
     def check_access_groups(self, operation):
         if self.env.user.id == SUPERUSER_ID or isinstance(self.env.uid, NoSecurityUid):
             return None
-        group_ids = set(self.ids) - set(self._get_ids_without_access_groups(operation))
-        if group_ids:
+        if group_ids := set(self.ids) - set(
+            self._get_ids_without_access_groups(operation)
+        ):
             sql_query = '''
                 SELECT r.aid, perm_{operation}       
                 FROM {table}_complete_groups_rel r 
@@ -187,7 +197,7 @@ class AccessGroupsModel(models.AbstractModel):
             '''.format(
                 operation=operation,
                 table=self._table,
-                ids=', '.join(map(lambda id: '(%s)' % id, group_ids)),
+                ids=', '.join(map(lambda id: f'({id})', group_ids)),
             )
             self.env.cr.execute(sql_query, [self.env.user.id])
             result = defaultdict(list)
@@ -204,8 +214,7 @@ class AccessGroupsModel(models.AbstractModel):
         if self.env.user.id == SUPERUSER_ID or isinstance(self.env.uid, NoSecurityUid):
             return self
         ids_with_access = self._get_ids_without_access_groups(operation)
-        group_ids = set(self.ids) - set(ids_with_access)
-        if group_ids:
+        if group_ids := set(self.ids) - set(ids_with_access):
             sql_query = '''
                 SELECT r.aid 
                 FROM {table}_complete_groups_rel r 
@@ -214,7 +223,7 @@ class AccessGroupsModel(models.AbstractModel):
                 WHERE r.aid = ANY (VALUES {ids}) AND u.uid = %s AND g.perm_{operation} = true; 
             '''.format(
                 table=self._table,
-                ids=', '.join(map(lambda id: '(%s)' % id, group_ids)),
+                ids=', '.join(map(lambda id: f'({id})', group_ids)),
                 operation=operation,
             )
             self.env.cr.execute(sql_query, [self.env.user.id])

@@ -106,32 +106,38 @@ class Thumbnail(models.AbstractModel):
     @api.depends('custom_thumbnail')
     def _compute_thumbnail(self):
         for record in self:
-            if record.custom_thumbnail:
-                record.thumbnail = record.custom_thumbnail        
-            else:
-                record.thumbnail = self._get_thumbnail_placeholder(
-                    'thumbnail', 'original', record._get_thumbnail_placeholder_name()
+            record.thumbnail = (
+                record.custom_thumbnail
+                or self._get_thumbnail_placeholder(
+                    'thumbnail',
+                    'original',
+                    record._get_thumbnail_placeholder_name(),
                 )
+            )
      
     @api.depends('custom_thumbnail_medium')
     def _compute_thumbnail_medium(self):
         for record in self:
-            if record.custom_thumbnail_medium:
-                record.thumbnail_medium = record.custom_thumbnail_medium        
-            else:
-                record.thumbnail_medium = self._get_thumbnail_placeholder(
-                    'thumbnail_medium', 'medium', record._get_thumbnail_placeholder_name()
+            record.thumbnail_medium = (
+                record.custom_thumbnail_medium
+                or self._get_thumbnail_placeholder(
+                    'thumbnail_medium',
+                    'medium',
+                    record._get_thumbnail_placeholder_name(),
                 )
+            )
      
     @api.depends('custom_thumbnail_small')
     def _compute_thumbnail_small(self):
         for record in self:
-            if record.custom_thumbnail_small:
-                record.thumbnail_small = record.custom_thumbnail_small     
-            else:
-                record.thumbnail_small = self._get_thumbnail_placeholder(
-                    'thumbnail_small', 'small', record._get_thumbnail_placeholder_name()
+            record.thumbnail_small = (
+                record.custom_thumbnail_small
+                or self._get_thumbnail_placeholder(
+                    'thumbnail_small',
+                    'small',
+                    record._get_thumbnail_placeholder_name(),
                 )
+            )
     
     #----------------------------------------------------------
     # Create, Update, Delete

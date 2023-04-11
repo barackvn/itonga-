@@ -49,10 +49,7 @@ class AutoVacuumRules(models.Model):
 
     def _default_sequence(self):
         record = self.sudo().search([], order='sequence desc', limit=1)
-        if record.exists():
-            return record.sequence + 1
-        else:
-            return 1
+        return record.sequence + 1 if record.exists() else 1
 
     #----------------------------------------------------------
     # Database
@@ -268,7 +265,7 @@ class AutoVacuumRules(models.Model):
             'date_format': DEFAULT_SERVER_DATE_FORMAT,
             'datetime_format': DEFAULT_SERVER_DATETIME_FORMAT,
             'Warning': Warning,
-            'logger': logging.getLogger("%s (%s)" % (__name__, rule.name)),
+            'logger': logging.getLogger(f"{__name__} ({rule.name})"),
         }
     
     #----------------------------------------------------------
@@ -310,8 +307,7 @@ class AutoVacuumRules(models.Model):
     @api.constrains('code')
     def _check_code(self):
         for record in self.sudo().filtered('code'):
-            message = test_python_expr(expr=record.code.strip(), mode="exec")
-            if message:
+            if message := test_python_expr(expr=record.code.strip(), mode="exec"):
                 raise ValidationError(message)
     
     @api.constrains(

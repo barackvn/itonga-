@@ -106,13 +106,15 @@ class BenchmarkTestCase(common.SavepointCase):
         admin_uid = self.browse_ref("base.user_admin").id
         model =  self.env['muk_dms.file'].with_context(bin_size=True)
         args = [[[[]], {'limit': 1}], [[[]], {'limit': 80}], [[[]], {'limit': 500}], [[[]]]]
-        
+
         benchmark_data_super = ['Super'] + self._benchmark_function(model.sudo().search, args)
         benchmark_data_admin = ['Admin'] + self._benchmark_function(model.sudo(admin_uid).search, args)
         benchmark_data_demo = ['Demo'] + self._benchmark_function(model.sudo(demo_uid).search, args)
 
-        info_message = "\n\nSearching files with bin_size = True | "
-        info_message += "Benchmark with Limit 1 / 80 / 500 / None (1500)\n\n"
+        info_message = (
+            "\n\nSearching files with bin_size = True | "
+            + "Benchmark with Limit 1 / 80 / 500 / None (1500)\n\n"
+        )
         info_message += self._benchmark_table([
             ["User", "Search Limit 1", "Search Limit 80", "Search Limit 500", "Search No Limit"], 
             benchmark_data_super, benchmark_data_admin, benchmark_data_demo
@@ -125,13 +127,15 @@ class BenchmarkTestCase(common.SavepointCase):
         admin_uid = self.browse_ref("base.user_admin").id
         model =  self.env['muk_dms.file'].with_context(bin_size=True)
         args = [[[], {'limit': 1}], [[], {'limit': 80}], [[], {'limit': 500}], [[]]]
-        
+
         benchmark_data_super = ['Super'] + self._benchmark_function(model.sudo().search_read, args)
         benchmark_data_admin = ['Admin'] + self._benchmark_function(model.sudo(admin_uid).search_read, args)
         benchmark_data_demo = ['Demo'] + self._benchmark_function(model.sudo(demo_uid).search_read, args)
-        
-        info_message = "\n\nSearching and reading all fields with bin_size = True | "
-        info_message += "Benchmark with Limit 1 / 80 / 500 / None (1500)\n\n"
+
+        info_message = (
+            "\n\nSearching and reading all fields with bin_size = True | "
+            + "Benchmark with Limit 1 / 80 / 500 / None (1500)\n\n"
+        )
         info_message += self._benchmark_table([
             ["User", "Search Limit 1", "Search Limit 80", "Search Limit 500", "Search No Limit"], 
             benchmark_data_super, benchmark_data_admin, benchmark_data_demo
@@ -209,13 +213,15 @@ class BenchmarkTestCase(common.SavepointCase):
         admin_uid = self.browse_ref("base.user_admin").id
         model =  self.env['muk_dms.directory'].with_context(bin_size=True)
         args = [[[[]], {'limit': 1}], [[[]], {'limit': 80}], [[[]], {'limit': 500}], [[[]]]]
-        
+
         benchmark_data_super = ['Super'] + self._benchmark_function(model.sudo().search, args)
         benchmark_data_admin = ['Admin'] + self._benchmark_function(model.sudo(admin_uid).search, args)
         benchmark_data_demo = ['Demo'] + self._benchmark_function(model.sudo(demo_uid).search, args)
 
-        info_message = "\n\nSearching directories with bin_size = True | "
-        info_message += "Benchmark with Limit 1 / 80 / 500 / None (1500)\n\n"
+        info_message = (
+            "\n\nSearching directories with bin_size = True | "
+            + "Benchmark with Limit 1 / 80 / 500 / None (1500)\n\n"
+        )
         info_message += self._benchmark_table([
             ["User", "Search Limit 1", "Search Limit 80", "Search Limit 500", "Search No Limit"], 
             benchmark_data_super, benchmark_data_admin, benchmark_data_demo
@@ -228,13 +234,15 @@ class BenchmarkTestCase(common.SavepointCase):
         admin_uid = self.browse_ref("base.user_admin").id
         model =  self.env['muk_dms.directory'].with_context(bin_size=True)
         args = [[[[]], {'limit': 1}], [[[]], {'limit': 80}], [[[]], {'limit': 500}], [[[]]]]
-        
+
         benchmark_data_super = ['Super'] + self._benchmark_function(model.sudo().search_parents, args)
         benchmark_data_admin = ['Admin'] + self._benchmark_function(model.sudo(admin_uid).search_parents, args)
         benchmark_data_demo = ['Demo'] + self._benchmark_function(model.sudo(demo_uid).search_parents, args)
 
-        info_message = "\n\nSearching directory parents with bin_size = True | "
-        info_message += "Benchmark with Limit 1 / 80 / 500 / None (1500)\n\n"
+        info_message = (
+            "\n\nSearching directory parents with bin_size = True | "
+            + "Benchmark with Limit 1 / 80 / 500 / None (1500)\n\n"
+        )
         info_message += self._benchmark_table([
             ["User", "Search Limit 1", "Search Limit 80", "Search Limit 500", "Search No Limit"], 
             benchmark_data_super, benchmark_data_admin, benchmark_data_demo
@@ -247,13 +255,15 @@ class BenchmarkTestCase(common.SavepointCase):
         admin_uid = self.browse_ref("base.user_admin").id
         model =  self.env['muk_dms.directory'].with_context(bin_size=True)
         args = [[[], {'limit': 1}], [[], {'limit': 80}], [[], {'limit': 500}], [[]]]
-        
+
         benchmark_data_super = ['Super'] + self._benchmark_function(model.sudo().search_read, args)
         benchmark_data_admin = ['Admin'] + self._benchmark_function(model.sudo(admin_uid).search_read, args)
         benchmark_data_demo = ['Demo'] + self._benchmark_function(model.sudo(demo_uid).search_read, args)
-        
-        info_message = "\n\nSearching and reading all fields with bin_size = True | "
-        info_message += "Benchmark with Limit 1 / 80 / 500 / None (1500)\n\n"
+
+        info_message = (
+            "\n\nSearching and reading all fields with bin_size = True | "
+            + "Benchmark with Limit 1 / 80 / 500 / None (1500)\n\n"
+        )
         info_message += self._benchmark_table([
             ["User", "Search Limit 1", "Search Limit 80", "Search Limit 500", "Search No Limit"], 
             benchmark_data_super, benchmark_data_admin, benchmark_data_demo

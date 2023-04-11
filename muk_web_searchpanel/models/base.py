@@ -141,7 +141,7 @@ class Base(models.AbstractModel):
             if not disable_counters:
                 groups = self.read_group(model_domain, [field_name], [field_name])
                 counters = {
-                    group[field_name][0]: group[field_name + '_count']
+                    group[field_name][0]: group[f'{field_name}_count']
                     for group in groups
                 }
             # retrieve all possible values, and return them with their label and counter
@@ -181,7 +181,7 @@ class Base(models.AbstractModel):
             if not disable_counters:
                 groups = self.read_group(model_domain, [field_name], [field_name])
                 counters = {
-                    group[field_name]: group[field_name + '_count']
+                    group[field_name]: group[f'{field_name}_count']
                     for group in groups
                 }
             # retrieve all possible values, and return them with their label and counter

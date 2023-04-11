@@ -76,18 +76,21 @@ class AutoVacuumTestCase(common.TransactionCase):
     def create_logs(self):
         ids = []
         time = datetime.datetime.utcnow()
-        for index in range(0, 10):
-            log = self.logs.create({
-                'create_date': time - datetime.timedelta(days=index),
-                'create_uid': self.env.user.id,
-                'name': "Test %s" % index,
-                'type': 'server',
-                'dbname': self.env.cr.dbname,
-                'level': "INFO",
-                'message': "TEST",
-                'path': "PATH",
-                'func': "TEST",
-                'line': 1})
+        for index in range(10):
+            log = self.logs.create(
+                {
+                    'create_date': time - datetime.timedelta(days=index),
+                    'create_uid': self.env.user.id,
+                    'name': f"Test {index}",
+                    'type': 'server',
+                    'dbname': self.env.cr.dbname,
+                    'level': "INFO",
+                    'message': "TEST",
+                    'path': "PATH",
+                    'func': "TEST",
+                    'line': 1,
+                }
+            )
             ids.append(log.id)
         return ids
     

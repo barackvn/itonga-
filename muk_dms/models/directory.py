@@ -242,8 +242,12 @@ class Directory(models.Model):
                 if operator == 'child_of':
                     directory_ids = self.search([('id', operator, directory_id)]).ids
                 directory_where_clause = 'WHERE r.did = ANY (VALUES {ids})'
-                where_clause = '' if not directory_ids else directory_where_clause.format(
-                    ids=', '.join(map(lambda id: '(%s)' % id, directory_ids))
+                where_clause = (
+                    directory_where_clause.format(
+                        ids=', '.join(map(lambda id: f'({id})', directory_ids))
+                    )
+                    if directory_ids
+                    else ''
                 )
             self.env.cr.execute(sql_query.format(directory_where_clause=where_clause), [])
             return self.env.cr.dictfetchall()
@@ -430,7 +434,7 @@ class Directory(models.Model):
             names = self.sudo().root_storage.root_directories.mapped('name')
         else:
             names = self.sudo().parent_directory.child_directories.mapped('name')
-        default.update({'name': file.unique_name(self.name, names)})
+        default['name'] = file.unique_name(self.name, names)
         new = super(Directory, self).copy(default)
         for record in self.files:
             record.copy({'directory': new.id})

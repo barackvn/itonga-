@@ -214,7 +214,7 @@ class File(models.Model):
 
     @api.multi
     def _get_thumbnail_placeholder_name(self):
-        return self.extension and "file_%s.svg" % self.extension or ""
+        return self.extension and f"file_{self.extension}.svg" or ""
     
     #----------------------------------------------------------
     # Actions
@@ -295,8 +295,12 @@ class File(models.Model):
             if directory_id:
                 directory_where_clause = 'WHERE r.fid = ANY (VALUES {ids})'
                 file_ids = self.search([('directory', operator, directory_id)]).ids
-                where_clause = '' if not file_ids else directory_where_clause.format(
-                    ids=', '.join(map(lambda id: '(%s)' % id, file_ids))
+                where_clause = (
+                    directory_where_clause.format(
+                        ids=', '.join(map(lambda id: f'({id})', file_ids))
+                    )
+                    if file_ids
+                    else ''
                 )
             self.env.cr.execute(sql_query.format(directory_where_clause=where_clause), [])
             return self.env.cr.dictfetchall()
@@ -316,8 +320,9 @@ class File(models.Model):
     
     @api.depends('name', 'directory', 'directory.parent_path')
     def _compute_path(self):
-        records_with_directory = self - self.filtered(lambda rec: not rec.directory)
-        if records_with_directory:
+        if records_with_directory := self - self.filtered(
+            lambda rec: not rec.directory
+        ):
             paths = [list(map(int, rec.directory.parent_path.split('/')[:-1])) for rec in records_with_directory]
             model = self.env['muk_dms.directory'].with_context(dms_directory_show_path=False)
             directories = model.browse(set(functools.reduce(operator.concat, paths)))
@@ -372,7 +377,7 @@ class File(models.Model):
         for record in self:
             record.save_type = "database"
     
-    @api.depends('storage', 'storage.save_type') 
+    @api.depends('storage', 'storage.save_type')
     def _compute_migration(self):
         storage_model = self.env['muk_dms.storage']
         save_field = storage_model._fields['save_type']
@@ -383,7 +388,7 @@ class File(models.Model):
             if storage_type != record.save_type:
                 storage_label = selection.get(storage_type)
                 file_label = selection.get(record.save_type)
-                record.migration = "%s > %s" % (file_label, storage_label)
+                record.migration = f"{file_label} > {storage_label}"
             else:
                 record.migration = selection.get(storage_type)
 
@@ -402,15 +407,16 @@ class File(models.Model):
             'tags': [('category', '=', False)]
         }}
         if self.category:
-            res.update({'domain': {
-                'tags': ['|', 
+            res['domain'] = {
+                'tags': [
+                    '|',
                     ('category', '=', False),
-                    ('category', 'child_of', self.category.id)
+                    ('category', 'child_of', self.category.id),
                 ]
-            }})
+            }
         tags = self.tags.filtered(
             lambda rec: not rec.category or \
-            rec.category == self.category
+                rec.category == self.category
         )
         self.tags = tags
         return res
@@ -428,22 +434,25 @@ class File(models.Model):
             FROM muk_dms_file
             WHERE id = ANY (VALUES {ids});
         '''.format(
-            ids=', '.join(map(lambda id: '(%s)' % id, file_ids))
+            ids=', '.join(map(lambda id: f'({id})', file_ids))
         )
         self.env.cr.execute(sql_query, [])
-        result = set(val[0] for val in self.env.cr.fetchall())
+        result = {val[0] for val in self.env.cr.fetchall()}
         return self.env['muk_dms.directory'].browse(result)
     
     @api.model
     def _read_group_process_groupby(self, gb, query):
         if self.env.user.id == SUPERUSER_ID or isinstance(self.env.uid, NoSecurityUid):
             return super(File, self)._read_group_process_groupby(gb, query)
-        directories = self.env['muk_dms.directory'].with_context(prefetch_fields=False).search([])
-        if directories:
+        if (
+            directories := self.env['muk_dms.directory']
+            .with_context(prefetch_fields=False)
+            .search([])
+        ):
             where_clause = '"{table}"."{field}" = ANY (VALUES {ids})'.format(
                 table=self._table,
                 field='directory',
-                ids=', '.join(map(lambda id: '(%s)' % id, directories.ids)),
+                ids=', '.join(map(lambda id: f'({id})', directories.ids)),
             )
             query.where_clause += [where_clause]
         else:
@@ -477,7 +486,7 @@ class File(models.Model):
     def check_access(self, operation, raise_exception=False):
         res = super(File, self).check_access(operation, raise_exception)
         try:
-            return res and self.check_directory_access(operation) == None
+            return res and self.check_directory_access(operation) is None
         except AccessError:
             if raise_exception:
                 raise
@@ -556,9 +565,7 @@ class File(models.Model):
             names = directory.sudo().files.mapped('name')
         else:
             names = self.sudo().directory.files.mapped('name')
-        default.update({
-            'name': file.unique_name(self.name, names, self.extension)
-        })
+        default['name'] = file.unique_name(self.name, names, self.extension)
         self.check_directory_access('create', default, True)
         return super(File, self).copy(default)
     

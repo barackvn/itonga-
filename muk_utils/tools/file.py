@@ -62,22 +62,19 @@ def check_name(name):
     return True
 
 def compute_name(name, suffix, escape_suffix):
-    if escape_suffix:
-        name, extension = os.path.splitext(name)
-        return "%s(%s)%s" % (name, suffix, extension)
-    else:
-        return "%s(%s)" % (name, suffix)
+    if not escape_suffix:
+        return f"{name}({suffix})"
+    name, extension = os.path.splitext(name)
+    return f"{name}({suffix}){extension}"
 
 def unique_name(name, names, escape_suffix=False):
-    if not name in names:
-        return name
-    else:
+    if name in names:
         suffix = 1
         name = compute_name(name, suffix, escape_suffix)
         while name in names:
             suffix += 1
             name = compute_name(name, suffix, escape_suffix)
-        return name 
+    return name 
 
 def unique_files(files):
     ufiles = []
